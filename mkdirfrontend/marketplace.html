@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web3 Marketplace</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .wallet-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .info-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .info-box small {
+            display: block;
+            opacity: 0.7;
+            font-size: 0.75rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .welcome {
+            text-align: center;
+            padding: 5rem 2rem;
+        }
+        
+        .welcome h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .welcome p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .controls h2 {
+            font-size: 2rem;
+        }
+        
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .item-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, background 0.2s;
+        }
+        
+        .item-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .item-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-available {
+            background: #38ef7d;
+            color: #000;
+        }
+        
+        .badge-sold {
+            background: #ff6b6b;
+        }
+        
+        .item-description {
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffd93d;
+        }
+        
+        .seller-info {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            margin-top: 1rem;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.5rem;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-family: inherit;
+        }
+        
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.7;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            🛒 Web3 Marketplace
+        </div>
+        <div class="wallet-info" id="walletInfo"></div>
+    </header>
+
+    <main class="container" id="mainContent">
+        <div class="welcome">
+            <h2>Welcome to Web3 Marketplace</h2>
+            <p>Connect your wallet to start buying and selling</p>
+            <button class="btn" onclick="connectWallet()">Connect Wallet</button>
+        </div>
+    </main>
+
+    <div class="modal" id="listModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>List New Item</h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <form onsubmit="listItem(event)">
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="itemName" placeholder="e.g., Gaming Laptop" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="itemDescription" rows="3" placeholder="Describe your item..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Price (MKT)</label>
+                    <input type="number" step="0.01" id="itemPrice" placeholder="e.g., 10" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">List Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN_ADDRESS = "0x2C0e2d98E01C052c2f1aDEe3A252670663355B8F";
+        const MARKETPLACE_ADDRESS = "0xb6dD26E61D251958d98648FA34877148Bc3f531C";
+
+        const TOKEN_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+        ];
+
+        const MARKETPLACE_ABI = [
+            "function listItem(string name, string description, uint256 price)",
+            "function buyItem(uint256 itemId)",
+            "function getItem(uint256 itemId) view returns (tuple(uint256 id, address seller, string name, string description, uint256 price, bool available))",
+            "function itemCount() view returns (uint256)"
+        ];
+
+        let provider, signer, account, tokenContract, marketplaceContract;
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    alert('Please install MetaMask!');
+                    return;
+                }
+
+                provider = new ethers.BrowserProvider(window.ethereum);
+                const accounts = await provider.send("eth_requestAccounts", []);
+                signer = await provider.getSigner();
+                account = accounts[0];
+
+                tokenContract = new ethers.Contract(TOKEN_ADDRESS, TOKEN_ABI, signer);
+                marketplaceContract = new ethers.Contract(MARKETPLACE_ADDRESS, MARKETPLACE_ABI, signer);
+
+                await loadDashboard();
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                alert('Error connecting wallet. Make sure you are on Sepolia network!');
+            }
+        }
+
+        async function loadDashboard() {
+            const balance = await tokenContract.balanceOf(account);
+            const balanceFormatted = ethers.formatEther(balance);
+
+            document.getElementById('walletInfo').innerHTML = `
+                <div class="info-box">
+                    <small>Balance</small>
+                    <div>${parseFloat(balanceFormatted).toFixed(2)} MKT</div>
+                </div>
+                <div class="info-box">
+                    <small>Connected</small>
+                    <div>${account.slice(0, 6)}...${account.slice(-4)}</div>
+                </div>
+            `;
+
+            await loadItems();
+        }
+
+        async function loadItems() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="controls">
+                    <h2>Available Items</h2>
+                    <button class="btn btn-success" onclick="openModal()">+ List Item</button>
+                </div>
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading items...</p>
+                </div>
+            `;
+
+            try {
+                const itemCount = await marketplaceContract.itemCount();
+                const items = [];
+
+                for (let i = 1; i <= itemCount; i++) {
+                    const item = await marketplaceContract.getItem(i);
+                    items.push({
+                        id: item[0].toString(),
+                        seller: item[1],
+                        name: item[2],
+                        description: item[3],
+                        price: ethers.formatEther(item[4]),
+                        available: item[5]
+                    });
+                }
+
+                if (items.length === 0) {
+                    document.getElementById('mainContent').innerHTML = `
+                        <div class="controls">
+                            <h2>Available Items</h2>
+                            <button class="btn btn-success" onclick="openModal()">+ List Item</button>
+                        </div>
+                        <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                            <h3>No items listed yet</h3>
+                            <p>Be the first to list an item!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let itemsHTML = items.map(item => `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-title">${item.name}</div>
+                            <span class="badge ${item.available ? 'badge-available' : 'badge-sold'}">
+                                ${item.available ? 'Available' : 'Sold'}
+                            </span>
+                        </div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-footer">
+                            <div>
+                                <small style="opacity: 0.7;">Price</small>
+                                <div class="price">${item.price} MKT</div>
+                            </div>
+                            ${item.available && item.seller.toLowerCase() !== account.toLowerCase() ? 
+                                `<button class="btn" onclick="buyItem(${item.id}, '${item.price}')">Buy Now</button>` : 
+                                item.seller.toLowerCase() === account.toLowerCase() ? 
+                                `<span style="color: #ffd93d;">Your Item</span>` : ''}
+                        </div>
+                        <div class="seller-info">Seller: ${item.seller.slice(0, 6)}...${item.seller.slice(-4)}</div>
+                    </div>
+                `).join('');
+
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="controls">
+                        <h2>Available Items</h2>
+                        <button class="btn btn-success" onclick="openModal()">+ List Item</button>
+                    </div>
+                    <div class="items-grid">
+                        ${itemsHTML}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading items:', error);
+                alert('Error loading items: ' + error.message);
+            }
+        }
+
+        async function buyItem(itemId, price) {
+            try {
+                const priceWei = ethers.parseEther(price);
+                
+                const approveTx = await tokenContract.approve(MARKETPLACE_ADDRESS, priceWei);
+                await approveTx.wait();
+                
+                const buyTx = await marketplaceContract.buyItem(itemId);
+                await buyTx.wait();
+                
+                alert('Item purchased successfully!');
+                await loadDashboard();
+            } catch (error) {
+                console.error('Error buying item:', error);
+                alert('Error buying item: ' + error.message);
+            }
+        }
+
+        function openModal() {
+            document.getElementById('listModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('listModal').classList.remove('active');
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemDescription').value = '';
+            document.getElementById('itemPrice').value = '';
+        }
+
+        async function listItem(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('itemName').value;
+            const description = document.getElementById('itemDescription').value;
+            const price = document.getElementById('itemPrice').value;
+
+            try {
+                const priceWei = ethers.parseEther(price);
+                const tx = await marketplaceContract.listItem(name, description, priceWei);
+                await tx.wait();
+                
+                alert('Item listed successfully!');
+                closeModal();
+                await loadItems();
+            } catch (error) {
+                console.error('Error listing item:', error);
+                alert('Error listing item: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
